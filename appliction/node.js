@@ -4,12 +4,27 @@ const WebSocket = require('ws');
 const http = require('http');
 const mongoose = require('mongoose');
 const path = require('path');
+const cors = require('cors'); // Added for CORS support
+const helmet = require('helmet'); // Added for security headers
+const compression = require('compression'); // Added for response compression
+
+// ========== ENVIRONMENT VARIABLES ==========
+const PORT = process.env.PORT || 3000;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/chat-app';
 
 // ========== EXPRESS SETUP ==========
 const app = express();
 const server = http.createServer(app);
 
 // ========== MIDDLEWARE ==========
+app.use(compression()); // Compress responses
+app.use(helmet()); // Add security headers
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' 
+        ? 'https://your-domain.com' 
+        : '*', // Allow all origins in development
+    methods: ['GET', 'POST'] // Allow only GET and POST requests
+}));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use((req, res, next) => {
@@ -90,7 +105,12 @@ app.post('/create-group', async (req, res) => {
 // ========== WEBSOCKET SETUP ==========
 const wss = new WebSocket.Server({ server });
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
+    // Validate origin in production
+    if (process.env.NODE_ENV === 'production' && req.headers.origin !== 'https://your-domain.com') {
+        return ws.close();
+    }
+
     let currentUser = null;
     let currentGroup = null;
 
@@ -99,6 +119,12 @@ wss.on('connection', (ws) => {
         try {
             const data = JSON.parse(message);
             
+            // Validate message type
+            const allowedMessageTypes = ['register', 'message', 'joinGroup'];
+            if (!allowedMessageTypes.includes(data.type)) {
+                throw new Error('Invalid message type');
+            }
+
             switch(data.type) {
                 case 'register':
                     currentUser = await User.findOneAndUpdate(
@@ -130,6 +156,10 @@ wss.on('connection', (ws) => {
             }
         } catch (err) {
             console.error('WebSocket error:', err);
+            ws.send(JSON.stringify({
+                type: 'error',
+                message: err.message || 'An error occurred'
+            }));
         }
     });
 
@@ -152,22 +182,28 @@ wss.on('connection', (ws) => {
 });
 
 // ========== SERVER INITIALIZATION ==========
-mongoose.connect('mongodb://127.0.0.1:27017/chat-app', { 
+mongoose.connect(MONGODB_URI, { 
     useNewUrlParser: true,
     useUnifiedTopology: true 
 })
 .then(() => {
-    server.listen(3000, '0.0.0.0', () => {
+    console.log('Connected to MongoDB:', mongoose.connection.host);
+    server.listen(PORT, '0.0.0.0', () => {
         console.log(`
         ========================================
-            Server running successfully!
-            HTTP: http://localhost:3000
-            MongoDB: Connected to chat-app
+            Server running on port ${PORT}
+            Environment: ${process.env.NODE_ENV || 'development'}
         ========================================
         `);
     });
 })
 .catch(err => {
-    console.error('Server startup failed:', err);
+    console.error('MongoDB connection error:', err);
     process.exit(1);
+});
+
+// Handle MongoDB disconnections
+mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB disconnected! Attempting reconnect...');
+    mongoose.connect(MONGODB_URI);
 });

@@ -1,9 +1,20 @@
 {
-    "name": "random-chat",
-    "version": "1.0.0",
-    "dependencies": {
-        "express": "^4.21.2",
-        "mongoose": "^8.11.0",
-        "ws": "^8.18.1"
-    }
+  "name": "random-chat",
+  "version": "1.0.0",
+  "main": "node.js",
+  "scripts": {
+    "start": "node node.js",
+    "dev": "nodemon node.js"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "compression": "^1.8.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "mongoose": "^8.11.0",
+    "ws": "^8.18.1"
+  }
 }
