@@ -1,0 +1,284 @@
+/* style.css - Full CSS for Random Chat App */
+
+/* ===== Base Styles ===== */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #f0f2f5;
+    color: #1c1e21;
+}
+
+/* ===== Stage Containers ===== */
+.stage {
+    display: none;
+    max-width: 800px;
+    margin: 20px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.active {
+    display: block !important;
+}
+
+/* ===== Buttons ===== */
+button {
+    background: #1877f2;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 10px;
+    transition: all 0.3s;
+    font-size: 16px;
+}
+
+button:hover {
+    background: #166fe5;
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    background: #e4e6eb;
+    cursor: not-allowed;
+}
+
+/* Free Chat Badge */
+.free-badge {
+    background: #42b72a;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+/* ===== Input Fields ===== */
+input[type="text"],
+input[type="number"],
+input[type="file"] {
+    padding: 12px;
+    border: 1px solid #dddfe2;
+    border-radius: 8px;
+    width: 100%;
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+/* ===== Chat Containers ===== */
+.chat-box {
+    height: 400px;
+    border: 1px solid #dddfe2;
+    border-radius: 8px;
+    margin: 20px 0;
+    padding: 15px;
+    overflow-y: auto;
+    background: white;
+}
+
+.message-input {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* ===== Messages ===== */
+.message {
+    margin: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    max-width: 70%;
+}
+
+.message.self {
+    background: #0084ff;
+    color: white;
+    margin-left: auto;
+}
+
+.message.other {
+    background: #e4e6eb;
+    margin-right: auto;
+}
+
+.chat-image {
+    max-width: 200px;
+    border-radius: 8px;
+    margin: 5px 0;
+}
+
+/* ===== Loading Spinner ===== */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #1877f2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===== Group Chat Specific ===== */
+.group-list {
+    display: grid;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.group-item {
+    padding: 15px;
+    background: white;
+    border: 1px solid #dddfe2;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.group-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.group-creator {
+    color: #65676b;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+/* ===== Connection Status ===== */
+.connection-status {
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.connected {
+    background: #e7f3ff;
+    color: #1877f2;
+}
+
+.disconnected {
+    background: #ffe3e3;
+    color: #ff0000;
+}
+
+/* ===== Mobile Responsive ===== */
+@media (max-width: 600px) {
+    .stage {
+        padding: 15px;
+        margin: 10px;
+    }
+    
+    .chat-box {
+        height: 300px;
+    }
+    
+    button {
+        width: 100%;
+        margin: 10px 0;
+    }
+}
+
+/* Group List Styling 
+#groupList {
+    display: grid;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.group-card {
+    padding: 1.5rem;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.group-card:hover {
+    transform: translateY(-3px);
+}
+
+.group-meta {
+    display: flex;
+    gap: 1rem;
+    margin: 0.5rem 0;
+    color: #65676b;
+    font-size: 0.9em;
+}
+
+.group-creator {
+    color: #1877f2;
+    font-weight: 500;
+    margin: 0;
+}
+*/
+/* Group Creation Section */
+.group-creation {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.creation-form {
+    display: grid;
+    gap: 1rem;
+    max-width: 500px;
+}
+
+.creation-form input,
+.creation-form textarea {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.creation-form textarea {
+    height: 80px;
+    resize: vertical;
+}
+
+/* Group Chat Window */
+.group-chat-window {
+    margin-top: 2rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+
+.group-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.group-header h3 {
+    margin: 0;
+    color: #1877f2;
+}
+
+.group-header p {
+    margin: 0.5rem 0 0;
+    color: #65676b;
+}
+
+/* Available Groups Section */
+.available-groups {
+    margin-top: 2rem;
+}
+
+.group-list {
+    display: grid;
+    gap: 1rem;
+}

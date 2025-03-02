@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Random Chat</title>
+    <link rel="stylesheet" href="/style.css">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
+</head>
+<body>
+    <!-- Stage 1: Welcome -->
+    <div id="stage1" class="stage active">
+        <h1>Welcome to Random Chat!</h1>
+        <p>Find your match anonymously</p>
+        <button onclick="showStage(2)">Let's Chat! ➔</button>
+    </div>
+
+    <!-- Stage 2: User Details -->
+    <div id="stage2" class="stage">
+        <h2>Tell Us About You</h2>
+        <input type="text" id="name" placeholder="Name">
+        <input type="number" id="age" placeholder="Age">
+        <button onclick="saveDetails()">Continue ➔</button>
+    </div>
+
+    <!-- Stage 3: Chat Type -->
+    <div id="stage3" class="stage">
+        <h2>Select Chat Type</h2>
+        <button onclick="startOneOnOne()">One-on-One Chat 💬</button>
+        <button onclick="startGroupChat()">Group Chat 👥</button>
+    </div>
+
+    <!-- Stage 4: One-on-One Chat -->
+    <div id="stage4" class="stage">
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>Finding your perfect match...</p>
+        </div>
+        
+        <div id="partnerInfo">
+            <h3>Chatting with: <span id="partnerName"></span> (<span id="partnerAge"></span>)</h3>
+        </div>
+        
+        <button id="connectBtn" onclick="toggleConnection()">Connect</button>
+        <div class="chat-box" id="chatBox"></div>
+        
+        <div class="message-input">
+            <input type="text" id="messageInput" placeholder="Type message...">
+            <input type="file" id="fileInput" accept="image/*">
+            <button onclick="sendMessage()">Send ➤</button>
+        </div>
+    </div>
+
+<!-- Stage 5: Group Chat -->
+<div id="stage5" class="stage">
+    <!-- Group Creation Section -->
+    <div class="group-creation">
+        <h2>Create New Group</h2>
+        <div class="creation-form">
+            <input type="text" id="newGroupName" placeholder="Group Name">
+            <textarea id="newGroupAbout" placeholder="Group Description"></textarea>
+            <button onclick="createGroup()">Create Group</button>
+        </div>
+    </div>
+
+    <!-- Available Groups Section -->
+    <div class="available-groups">
+        <h2>Available Groups</h2>
+        <div id="groupList" class="group-list"></div>
+    </div>
+
+    <!-- Group Chat Interface (Hidden Initially) -->
+    <div id="groupChatWindow" class="group-chat-window" style="display: none;">
+        <div class="group-header">
+            <h3 id="currentGroupName"></h3>
+            <p id="currentGroupAbout"></p>
+        </div>
+        
+        <div class="chat-box" id="groupChatBox"></div>
+        
+        <div class="message-input">
+            <input type="text" id="groupMessageInput" placeholder="Type your message...">
+            <input type="file" id="groupFileInput" accept="image/*">
+            <button onclick="sendGroupMessage()">Send</button>
+        </div>
+    </div>
+</div>
+
+<!-- At the BOTTOM of <body> -->
+    <script src="/script.js"></script>
+<body>
+<html>
+
