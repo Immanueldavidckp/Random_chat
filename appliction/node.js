@@ -8,10 +8,12 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
+const jwt = require('jsonwebtoken');
 
 // ========== ENVIRONMENT VARIABLES ==========
 const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/chat-app';
+const MONGODB_URI = process.env.MONGODB_URI;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Validate required environment variables
 const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET'];
@@ -29,9 +31,7 @@ const server = http.createServer(app);
 app.use(compression());
 app.use(helmet());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.CLIENT_URL 
-    : '*',
+  origin: process.env.NODE_ENV === 'production' ? process.env.CLIENT_URL : '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -57,14 +57,7 @@ const messageSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const groupSchema = new mongoose.Schema({
-  name: { 
-    type: String, 
-    required: true,
-    unique: true,
-    trim: true,
-    minlength: 3,
-    maxlength: 30
-  },
+  name: { type: String, required: true, unique: true, trim: true, minlength: 3, maxlength: 30 },
   about: { type: String, default: 'No description' },
   creator: { type: String, required: true },
   members: [{ type: String, required: true }]
@@ -76,12 +69,28 @@ const Message = mongoose.model('Message', messageSchema);
 const Group = mongoose.model('Group', groupSchema);
 
 // ========== REST API ROUTES ==========
+app.post('/auth/register', async (req, res) => {
+  try {
+    const { name, age } = req.body;
+    if (!name || !age) return res.status(400).json({ error: 'Name and age are required' });
+
+    let user = await User.findOneAndUpdate(
+      { name },
+      { $set: { age, lastActive: new Date() } },
+      { upsert: true, new: true, lean: true }
+    );
+
+    const token = jwt.sign({ name: user.name, age: user.age }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token, user });
+  } catch (err) {
+    console.error('Registration error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/group/:groupName', async (req, res) => {
   try {
-    const group = await Group.findOne({ name: req.params.groupName })
-      .select('-__v')
-      .lean();
-
+    const group = await Group.findOne({ name: req.params.groupName }).select('-__v').lean();
     if (!group) return res.status(404).json({ error: 'Group not found' });
     res.json(group);
   } catch (err) {
@@ -93,10 +102,7 @@ app.get('/group/:groupName', async (req, res) => {
 app.post('/create-group', async (req, res) => {
   try {
     const { name, about, creator } = req.body;
-    
-    if (!name?.trim()) {
-      return res.status(400).json({ error: 'Group name is required' });
-    }
+    if (!name?.trim()) return res.status(400).json({ error: 'Group name is required' });
 
     const newGroup = new Group({
       name: name.trim(),
@@ -106,17 +112,10 @@ app.post('/create-group', async (req, res) => {
     });
 
     const savedGroup = await newGroup.save();
-    res.status(201).json({
-      ...savedGroup.toObject(),
-      __v: undefined
-    });
-    
+    res.status(201).json({ ...savedGroup.toObject(), __v: undefined });
   } catch (err) {
     console.error('Group creation error:', err);
-    const errorMessage = err.code === 11000 
-      ? 'Group name already exists' 
-      : 'Failed to create group';
-    res.status(400).json({ error: errorMessage });
+    res.status(400).json({ error: err.code === 11000 ? 'Group name already exists' : 'Failed to create group' });
   }
 });
 
@@ -124,96 +123,60 @@ app.post('/create-group', async (req, res) => {
 const wss = new WebSocket.Server({ server });
 
 wss.on('connection', (ws, req) => {
-  if (process.env.NODE_ENV === 'production' && req.headers.origin !== process.env.CLIENT_URL) {
-    return ws.close(1008, 'Invalid origin');
-  }
+  let token = req.url.split('token=')[1];
 
-  let currentUser = null;
-  let currentGroup = null;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    ws.user = decoded;
+  } catch (err) {
+    console.error('Invalid WebSocket token:', err.message);
+    return ws.close(1008, 'Invalid token');
+  }
 
   ws.on('message', async (message) => {
     try {
       const data = JSON.parse(message);
-      
-      if (!['register', 'message', 'joinGroup'].includes(data.type)) {
-        throw new Error('Invalid message type');
-      }
+      if (!ws.user) return ws.send(JSON.stringify({ type: 'error', message: 'Unauthorized' }));
 
-      switch(data.type) {
-        case 'register':
-          currentUser = await User.findOneAndUpdate(
-            { name: data.name },
-            { $set: { age: data.age, lastActive: new Date() } },
-            { upsert: true, new: true, lean: true }
-          );
-          break;
-
+      switch (data.type) {
         case 'message':
-          if (currentUser) {
-            await Message.create({
-              content: data.content,
-              sender: currentUser.name,
-              isImage: data.isImage,
-              room: data.room
-            });
-          }
+          await Message.create({ content: data.content, sender: ws.user.name, isImage: data.isImage, room: data.room });
           break;
-
         case 'joinGroup':
-          currentGroup = data.groupName;
-          await Group.updateOne(
-            { name: data.groupName },
-            { $addToSet: { members: data.userName } }
-          );
+          await Group.updateOne({ name: data.groupName }, { $addToSet: { members: ws.user.name } });
           break;
       }
     } catch (err) {
       console.error('WebSocket error:', err);
-      ws.send(JSON.stringify({
-        type: 'error',
-        message: err.message || 'An error occurred'
-      }));
+      ws.send(JSON.stringify({ type: 'error', message: err.message || 'An error occurred' }));
     }
   });
 
   ws.on('close', async () => {
     try {
-      if (currentUser) {
-        await User.findByIdAndUpdate(currentUser._id, { lastActive: new Date() });
-      }
-      if (currentGroup && currentUser?.name) {
-        await Group.updateOne(
-          { name: currentGroup },
-          { $pull: { members: currentUser.name } }
-        );
-      }
+      if (ws.user) await User.updateOne({ name: ws.user.name }, { lastActive: new Date() });
     } catch (err) {
       console.error('Connection cleanup error:', err);
     }
   });
 });
 
-// ========== SERVER INITIALIZATION ==========
-mongoose.connect(MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB:', mongoose.connection.host);
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`
-      ========================================
-          Server running on port ${PORT}
-          Environment: ${process.env.NODE_ENV || 'development'}
-      ========================================
-      `);
-    });
-  })
-  .catch(err => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
+// ========== MONGODB CONNECTION ==========
+async function connectWithRetry() {
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log('Connected to MongoDB');
+  } catch (err) {
+    console.error('MongoDB connection failed, retrying in 5 seconds...');
+    setTimeout(connectWithRetry, 5000);
+  }
+}
 
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected! Attempting reconnect...');
-  mongoose.connect(MONGODB_URI);
+connectWithRetry();
+
+// ========== SERVER INITIALIZATION ==========
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 process.on('SIGINT', async () => {
