@@ -6,21 +6,8 @@
     "start": "node node.js",
     "dev": "nodemon node.js"
   },
-  "engines": {
-    "node": "18.x"
-  },
   "dependencies": {
-    "compression": "^1.7.4",
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
     "express": "^4.21.2",
-    "helmet": "^7.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.14.2",
-    "mongoose": "^8.11.0",
-    "ws": "^8.18.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
+    "mongoose": "^8.11.0"
   }
 }
