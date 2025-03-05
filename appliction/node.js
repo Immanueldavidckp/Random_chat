@@ -164,10 +164,15 @@ wss.on('connection', (ws, req) => {
 // ========== MONGODB CONNECTION ==========
 async function connectWithRetry() {
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      tls: true, // Enable TLS/SSL for MongoDB Atlas
+    });
     console.log('Connected to MongoDB');
   } catch (err) {
     console.error('MongoDB connection failed, retrying in 5 seconds...');
+    console.error('Error details:', err.message);
     setTimeout(connectWithRetry, 5000);
   }
 }
